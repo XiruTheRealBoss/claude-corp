@@ -6,11 +6,11 @@ Quando alguém tem uma dúvida (pedido de permissão, AskUserQuestion, Claude es
 
 ## Uso
 
-1. Uma vez: `node install.js` (adiciona os hooks em `~/.claude/settings.json`, com backup em `settings.json.bak-claude-corp`).
-2. Abra o app: `abrir.cmd` (ou `node server.js` e acesse http://localhost:4747). Clique em **Ativar notificações**.
-3. Abra o Claude Code em qualquer projeto. Sessões novas abertas com o app ligado entram no **modo empresa** (`protocolo.md` vira instrução do CEO: nome da empresa em `.corp/empresa.json`, um documento por fase em `.corp/`, agentes contratados com `[Cargo]` na descrição). Com o app fechado, o Claude Code funciona normalmente.
+1. Uma vez: `node install.js`. Ele adiciona os hooks em `~/.claude/settings.json` (com backup em `settings.json.bak-claude-corp`) e instala a skill **/empresa**.
+2. Em qualquer projeto, numa sessão nova do Claude Code, digite `/empresa o que você quer` (ex.: `/empresa site de encomendas da minha loja de bolos`). A skill liga a cidade se estiver desligada, abre a janela uma vez e põe a sessão no **modo empresa**: o projeto vira um prédio e o Claude vira o CEO (`protocolo.md`: nome em `.corp/empresa.json`, um documento por fase em `.corp/`, agentes contratados com `[Cargo]` na descrição).
+3. Sem `/empresa`, o Claude Code funciona normalmente. Se a cidade estiver aberta, a sessão só aparece nela, sem virar empresa. Para abrir só a cidade: `abrir.cmd`. Clique em **Ativar notificações** para receber os avisos de dúvida.
 
-Remover: `node install.js remove`.
+Remover: `node install.js remove` (tira os hooks e a skill).
 
 - `node core.js` roda o autoteste da lógica. `node demo.js` manda uma empresa de mentira para o app.
 - Para depurar os eventos crus, crie um arquivo vazio chamado `debug` nesta pasta (o hook passa a anotar neles); apague para desligar.

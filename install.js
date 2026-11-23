@@ -19,4 +19,18 @@ for (const e of EVENTS) {
   if (list.length) settings.hooks[e] = list; else delete settings.hooks[e];
 }
 fs.writeFileSync(file, JSON.stringify(settings, null, 2));
-console.log(process.argv[2] === 'remove' ? 'Claude Corp removido.' : `Claude Corp instalado em ${file} (backup: settings.json.bak-claude-corp)`);
+
+// the /empresa skill, pointing at this folder
+const skillDir = path.join(os.homedir(), '.claude', 'skills', 'empresa');
+const skillFile = path.join(skillDir, 'SKILL.md');
+const ours = fs.existsSync(skillFile) && fs.readFileSync(skillFile, 'utf8').includes('Claude Corp');
+if (process.argv[2] === 'remove') {
+  if (ours) fs.rmSync(skillDir, { recursive: true });
+} else if (fs.existsSync(skillFile) && !ours) {
+  console.log(`Aviso: já existe outra skill em ${skillDir}; não mexi nela.`);
+} else {
+  fs.mkdirSync(skillDir, { recursive: true });
+  const app = __dirname.replace(/\\/g, '/');
+  fs.writeFileSync(skillFile, fs.readFileSync(path.join(__dirname, 'skill', 'SKILL.md'), 'utf8').replaceAll('{{APP}}', app));
+}
+console.log(process.argv[2] === 'remove' ? 'Claude Corp removido (hooks e skill /empresa).' : `Claude Corp instalado: hooks em ${file} (backup: settings.json.bak-claude-corp) e skill /empresa.`);
