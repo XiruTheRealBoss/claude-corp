@@ -4,11 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Claude Corp</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Architects+Daughter&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root { --clay: #ffd166; --ink: #eaf4ff; --muted: #9dbbe0; --panel: #0f3363; --line: #3f6fa8; --ok: #8ff0b4; --ask: #ff5d5d; --win: #ffd166;
-    --pixel: 'Architects Daughter', cursive; --ui: 'Inter', system-ui, sans-serif; }
+    --pixel: 'Architects Daughter', cursive; --ui: system-ui, 'Segoe UI', sans-serif; }
+  @font-face { font-family: 'Architects Daughter'; src: url(vendor/ArchitectsDaughter.woff2) format('woff2'); font-display: swap; } /* self-hosted, OFL */
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: #123a70; color: var(--ink); font: 14px var(--ui); overflow: hidden; }
   header { position: fixed; inset: 0 0 auto 0; height: 52px; display: flex; align-items: center; gap: 14px; padding: 0 16px;
@@ -60,7 +59,7 @@
 <aside id="panel"></aside>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" integrity="sha384-wagZhIFgY4hD+7awjQjR4e2E294y6J2HSnd8eTNc15ZubTeQeVRZwhQJ+W6hnBsf" crossorigin="anonymous"></script>
+<script src="vendor/OrbitControls.js" integrity="sha384-wagZhIFgY4hD+7awjQjR4e2E294y6J2HSnd8eTNc15ZubTeQeVRZwhQJ+W6hnBsf"></script>
 <script>
 const DEPTS = [
   ['brainstorming', 'Brainstorming'], ['pesquisa', 'Pesquisa & Referências'], ['planejamento', 'Planejamento'],
@@ -338,9 +337,9 @@ function emit(group, pos, txt, rise = 1) {
 function makeWorker(o, w, home, spawn) {
   const mat2 = new THREE.SpriteMaterial({ map: spriteTex(w.acc, false, false, false), transparent: false, alphaTest: 0.5 });
   const sp = new THREE.Sprite(mat2); sp.center.set(0.5, 0); sp.scale.set(0.92, 1, 1); sp.userData.worker = true;
-  const bub = new THREE.Sprite(new THREE.SpriteMaterial({ map: textTex('?', { font: 'bold 84px Silkscreen, monospace', bg: '#ff5d5d' }), depthTest: false }));
+  const bub = new THREE.Sprite(new THREE.SpriteMaterial({ map: textTex('?', { font: `bold 84px ${HAND}`, bg: '#ff5d5d' }), depthTest: false }));
   bub.scale.setScalar(0.45); bub.renderOrder = 5;
-  const zz = new THREE.Sprite(new THREE.SpriteMaterial({ map: textTex('z', { font: '72px Silkscreen, monospace', color: '#b8b6d0' }), transparent: true }));
+  const zz = new THREE.Sprite(new THREE.SpriteMaterial({ map: textTex('z', { font: `72px ${HAND}`, color: '#b8b6d0' }), transparent: true }));
   zz.scale.setScalar(0.35);
   o.group.add(sp, bub, zz);
   const start = spawn ? new THREE.Vector3(ELEVATOR.x, home.y, ELEVATOR.z + 0.6) : home.clone();

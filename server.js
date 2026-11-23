@@ -12,6 +12,14 @@ const TOKEN = require('crypto').randomBytes(24).toString('hex');
 fs.writeFileSync(TOKEN_FILE, TOKEN, { mode: 0o600 });
 const HOSTS = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`]); // blocks DNS rebinding
 
+// fixed allow-list: no path from the URL ever reaches the filesystem
+const STATIC = {
+  '/': 'text/html; charset=utf-8',
+  '/vendor/OrbitControls.js': 'text/javascript; charset=utf-8',
+  '/vendor/ArchitectsDaughter.woff2': 'font/woff2',
+};
+const SECURITY = { 'x-content-type-options': 'nosniff', 'x-frame-options': 'DENY', 'referrer-policy': 'no-referrer', 'cross-origin-resource-policy': 'same-origin' };
+
 let state = { buildings: {} };
 try { state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')); } catch { /* first run */ }
 
@@ -53,10 +61,16 @@ const server = http.createServer((req, res) => {
     if (Object.hasOwn(state.buildings, key)) delete state.buildings[key];
     send({ type: 'state', state }); save(); res.end('ok'); return;
   }
-  const file = req.url === '/' ? 'index.html' : null;
-  if (!file) { res.writeHead(404).end(); return; }
-  res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-  fs.createReadStream(path.join(__dirname, 'public', file)).pipe(res);
+  const type = STATIC[req.url];
+  if (!type || req.method !== 'GET') { res.writeHead(404).end(); return; }
+  if (req.url !== '/') { res.writeHead(200, { ...SECURITY, 'content-type': type }); fs.createReadStream(path.join(__dirname, 'public', req.url)).pipe(res); return; }
+  const nonce = require('crypto').randomBytes(16).toString('base64');
+  const html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8').replace(/<script>(?=\r?\n)/, `<script nonce="${nonce}">`);
+  res.writeHead(200, {
+    ...SECURITY, 'content-type': type,
+    'content-security-policy': `default-src 'self'; script-src 'self' 'nonce-${nonce}' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'`,
+  });
+  res.end(html);
 });
 
 server.listen(PORT, '127.0.0.1', () => console.log(`Claude Corp em http://localhost:${PORT}`));
