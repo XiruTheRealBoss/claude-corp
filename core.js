@@ -41,7 +41,8 @@ const short = (s, n = 90) => { s = String(s ?? '').replace(/\s+/g, ' ').trim(); 
 
 function building(state, ev) {
   const key = projectKey(ev.cwd);
-  let b = state.buildings[key];
+  if (['__proto__', 'constructor', 'prototype'].includes(key)) throw new Error('bad cwd');
+  let b = Object.hasOwn(state.buildings, key) ? state.buildings[key] : null;
   if (!b) {
     b = state.buildings[key] = {
       key, cwd: ev.cwd, nome: baseName(ev.cwd), missao: '', fase: 'brainstorming',

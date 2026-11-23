@@ -6,7 +6,11 @@ const { apply } = require('./core');
 
 const PORT = +process.env.CORP_PORT || 4747;
 const STATE_FILE = path.join(__dirname, 'state.json');
-const PROTOCOL = fs.readFileSync(path.join(__dirname, 'protocolo.md'), 'utf8');
+const TOKEN_FILE = path.join(__dirname, 'token');
+// shared secret with hook.js: web pages can't read this file, so they can't post fake events
+const TOKEN = require('crypto').randomBytes(24).toString('hex');
+fs.writeFileSync(TOKEN_FILE, TOKEN, { mode: 0o600 });
+const HOSTS = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`]); // blocks DNS rebinding
 
 let state = { buildings: {} };
 try { state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')); } catch { /* first run */ }
@@ -17,7 +21,9 @@ let saveTimer;
 const save = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => fs.writeFile(STATE_FILE, JSON.stringify(state), () => {}), 500); };
 
 const server = http.createServer((req, res) => {
+  if (!HOSTS.has(req.headers.host)) { res.writeHead(403).end(); return; }
   if (req.method === 'POST' && req.url === '/event') {
+    if (req.headers['x-corp-token'] !== TOKEN) { res.writeHead(403).end(); return; }
     let body = '';
     req.on('data', c => { body += c; if (body.length > 2e6) req.destroy(); });
     req.on('end', () => {
@@ -25,12 +31,13 @@ const server = http.createServer((req, res) => {
       try { ev = JSON.parse(body); } catch { res.writeHead(400).end(); return; }
       if (!ev || typeof ev.cwd !== 'string' || typeof ev.hook_event_name !== 'string') { res.writeHead(400).end(); return; }
       ev.ts = Date.now();
-      const { focus } = apply(state, ev);
+      let focus;
+      try { ({ focus } = apply(state, ev)); } catch (e) { console.error(e); res.writeHead(400).end(); return; }
       send({ type: 'state', state });
       if (focus) send({ type: 'focus', ...focus });
       save();
       res.writeHead(200, { 'content-type': 'application/json' });
-      res.end(JSON.stringify(ev.hook_event_name === 'SessionStart' ? { context: PROTOCOL } : {}));
+      res.end('{"ok":true}'); // hook.js reads protocolo.md itself; the server never supplies prompt text
     });
     return;
   }
@@ -42,7 +49,8 @@ const server = http.createServer((req, res) => {
     return;
   }
   if (req.method === 'DELETE' && req.url.startsWith('/building/')) { // demolish a building
-    delete state.buildings[decodeURIComponent(req.url.slice(10))];
+    let key; try { key = decodeURIComponent(req.url.slice(10)); } catch { res.writeHead(400).end(); return; }
+    if (Object.hasOwn(state.buildings, key)) delete state.buildings[key];
     send({ type: 'state', state }); save(); res.end('ok'); return;
   }
   const file = req.url === '/' ? 'index.html' : null;

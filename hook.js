@@ -17,13 +17,15 @@ process.stdin.on('end', async () => {
   if (r && r.agentId) ev.launched = { agentId: r.agentId, isAsync: !!r.isAsync }; // Agent tool result: links the hire to its subagent
   delete ev.tool_response; // can be huge, the city does not need it
   try {
+    const token = fs.readFileSync(path.join(__dirname, 'token'), 'utf8');
     const r = await fetch(`http://127.0.0.1:${PORT}/event`, {
-      method: 'POST', headers: { 'content-type': 'application/json' },
+      method: 'POST', headers: { 'content-type': 'application/json', 'x-corp-token': token },
       body: JSON.stringify(ev), signal: AbortSignal.timeout(800),
     });
-    const out = await r.json();
-    if (out.context) {
-      process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: out.context } }));
+    // company mode only when our own server answered; the prompt text comes from the local file, never the network
+    if (r.ok && ev.hook_event_name === 'SessionStart') {
+      const context = fs.readFileSync(path.join(__dirname, 'protocolo.md'), 'utf8');
+      process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: context } }));
     }
   } catch { /* app closed: company mode off, Claude Code works as usual */ }
 });

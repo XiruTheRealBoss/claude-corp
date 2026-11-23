@@ -23,7 +23,7 @@ const steps = [
 ];
 (async () => {
   for (const s of steps) {
-    await fetch('http://127.0.0.1:4747/event', { method: 'POST', body: JSON.stringify({ cwd, session_id: 'demo', ...s }) });
+    await fetch('http://127.0.0.1:4747/event', { method: 'POST', headers: { 'x-corp-token': require('fs').readFileSync(__dirname + '/token', 'utf8') }, body: JSON.stringify({ cwd, session_id: 'demo', ...s }) });
     await new Promise(r => setTimeout(r, 350));
   }
   console.log('demo enviada');

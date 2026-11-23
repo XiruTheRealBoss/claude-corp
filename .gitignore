@@ -3,3 +3,4 @@ debug
 .corp/
 .claude/
 node_modules/
+token
